@@ -1,6 +1,5 @@
 from configs.default_configs import get_default_configs
 
-
 def get_config():
     config = get_default_configs()
 
@@ -12,14 +11,14 @@ def get_config():
     training.gaussian_sampling = False
     training.plpd_threshold = 1e-4
     training.deyo_margin = 4.0
-    training.filter_ent=0
-    training.filter_plpd=0
+    training.filter_ent=1
+    training.filter_plpd=1
     training.gap=1
     training.size=15
     training.cache_len=10
 
-    training.som_lr=0.05
-    training.som_iter=10
+    training.som_lr=0.01
+    training.som_iter=100
     training.vis_weight=0.2
     training.som_sigma=2 
     # inference

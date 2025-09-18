@@ -12,7 +12,7 @@ import torch.utils.data
 import torch.utils.data.distributed
 import torchvision.transforms as transforms
 
-from ttda_method import ZeroShotCLIP,ZeroShotNTTA_queue, ZeroShotNTTA, TPT, Tent, SoTTA, TDA, ZeroShotNTTA_DEYO,ZeroShotNTTA_DEYO_gap
+from ttda_method import ZeroShotNTTA_Syde
 
 try:
     from torchvision.transforms import InterpolationMode
@@ -121,20 +121,9 @@ def main_worker(args):
     args.class_num = len(classnames)
     print(f'=> loaded {args.data.test_set} classname')
 
-    if args.method == "ZS-CLIP":
-        learner_method = ZeroShotCLIP
-    elif args.method == "ZS-NTTA":
-        learner_method = ZeroShotNTTA_DEYO_gap
-    elif args.method == "TPT":
-        learner_method = TPT
-    elif args.method == "Tent":
-        learner_method = Tent
-    elif args.method == "SoTTA":
-        learner_method = SoTTA
-    elif args.method == "TDA":
-        learner_method = TDA
-    elif args.method == "ZS-NTTA-gap":
-        learner_method = ZeroShotNTTA_DEYO_gap
+
+    if args.method == "ZS-NTTA":
+        learner_method = ZeroShotNTTA_Syde
     else:
         raise NotImplementedError
     
@@ -145,30 +134,18 @@ def main_worker(args):
 
     results = {}
     # for set_id in datasets:
-    if args.method == 'TPT':
-        base_transform = transforms.Compose([
-            transforms.Resize(args.model.resolution, interpolation=BICUBIC),
-            transforms.CenterCrop(args.model.resolution)])
-        preprocess = transforms.Compose([
-            transforms.ToTensor(),
-            normalize])
-        data_transform = AugMixAugmenter(base_transform, preprocess, n_views=args.inference.batch_size-1, 
-                                        augmix=len(args.data.test_set)>1)
-        data_corrupt_transform = AugMixAugmenter(None, preprocess, n_views=args.inference.batch_size-1, 
-                                        augmix=len(args.data.test_set)>1)
-        batchsize = 1
-    else:
-        data_transform = transforms.Compose([
-            transforms.Resize(args.model.resolution, interpolation=BICUBIC),
-            transforms.CenterCrop(args.model.resolution),
-            transforms.ToTensor(),
-            normalize,
-        ])
-        data_corrupt_transform = transforms.Compose([
-            transforms.ToTensor(),
-            normalize,
-        ])
-        batchsize = args.inference.batch_size
+    
+    data_transform = transforms.Compose([
+        transforms.Resize(args.model.resolution, interpolation=BICUBIC),
+        transforms.CenterCrop(args.model.resolution),
+        transforms.ToTensor(),
+        normalize,
+    ])
+    data_corrupt_transform = transforms.Compose([
+        transforms.ToTensor(),
+        normalize,
+    ])
+    batchsize = args.inference.batch_size
 
     print("evaluating: {}".format(args.data.test_set))
 
@@ -180,12 +157,10 @@ def main_worker(args):
         batch_size=batchsize, shuffle=False,
         num_workers=args.data.workers, pin_memory=True)
 
-
     val_loader = torch.utils.data.DataLoader(
                 val_dataset,
                 batch_size=batchsize, shuffle=True,
                 num_workers=args.data.workers, pin_memory=True)
-    # learner.model.get_id_visual_classifier(id_loader,args)
     results[args.data.test_set] = test_time_adapt_eval(val_loader, learner, args)
     del val_dataset, val_loader
     try:
@@ -220,15 +195,6 @@ def main_worker(args):
                 f.write("ACC: {:.2f}\t".format(results[id][0]))
         f.write("\n\n\n\n")
 
-def print_gpu_memory():
-    if torch.cuda.is_available():
-        device = torch.device("cuda:3")
-        allocated = torch.cuda.memory_allocated(device) / 1024**2  # 已分配显存 (MB)
-        reserved = torch.cuda.memory_reserved(device) / 1024**2    # 已保留显存 (MB)
-        max_allocated = torch.cuda.max_memory_allocated(device) / 1024**2  # 运行过程中的最大值
-        print(f"Allocated: {allocated:.2f} MB")
-    else:
-        print("CUDA is not available.")
 
 def test_time_adapt_eval(val_loader, learner, args):
     batch_time = AverageMeter('Time', ':6.3f', Summary.NONE)
@@ -268,73 +234,24 @@ def test_time_adapt_eval(val_loader, learner, args):
         learner.setup(images, target)
         with torch.no_grad():
             with torch.cuda.amp.autocast():
-                st = time.time()
                 output, image_feature_raw = learner.get_output(image) 
                 assert output.dim() == 2
-                # _, predicted = output.max(dim=-1)
-
-                
 
                 logit_text = F.softmax(output, dim=1)
-
-                # entropys,plpd =  learner.get_ent_plpd(output, image, image_feature_raw, i, target)
-                # if i == 0:
-                #     plpd_list = plpd
-                #     entropys_list = entropys
-                #     target_list = target
-                # else:
-                #     plpd_list = torch.cat([plpd_list,plpd])
-                #     entropys_list = torch.cat([entropys_list,entropys])
-                #     target_list = torch.cat([target_list,target])
-
                 
-                # np.save(f'plpd_list_{args.data.OOD_set}.npy',plpd_list.cpu().numpy())
-                # np.save(f'entropy_list_{args.data.OOD_set}.npy',entropys_list.cpu().numpy())
-                # np.save(f'target_list_{args.data.OOD_set}.npy',target_list.cpu().numpy())
-
-                # continue
-
-                # if args.method == 'ZS-NTTA' and args.inference.batch_size == 1:
-                #     ttda_queue_length = args.inference.ttda_queue_length
-                # else:
-                ttda_queue_length = args.inference.batch_size
-                
-                if i * args.inference.batch_size > args.inference.using_ttda_step * ttda_queue_length:
+                if i  > args.inference.using_ttda_step :
                     unseen_mask, conf, visual_output = learner.get_unseen_mask(output, image, image_feature_raw, i, target)
                 else:
                     unseen_mask, visual_output,plpd, entropys, target = learner.get_unseen_mask(output, image, image_feature_raw, i, target)
                     logit = F.softmax(output, dim=1)
                     conf, _ = logit.max(dim=-1)
-                print('FPS:',128/(time.time()-st))
-
-                # if i == 0:
-                #     plpd_list = plpd
-                #     entropys_list = entropys
-                #     target_list = target
-                # else:
-                #     plpd_list = torch.cat([plpd_list,plpd])
-                #     entropys_list = torch.cat([entropys_list,entropys])
-                #     target_list = torch.cat([target_list,target])
-                # print(plpd_list.shape,entropys_list.shape,target_list.shape)
-
-                # np.save(f'plpd_list_{args.data.OOD_set}.npy',plpd_list.cpu().numpy())
-                # np.save(f'entropy_list_{args.data.OOD_set}.npy',entropys_list.cpu().numpy())
-                # np.save(f'target_list_{args.data.OOD_set}.npy',target_list.cpu().numpy())
 
                 logit_vis = F.softmax(visual_output[:,:class_num], dim=1)
-                if i * args.inference.batch_size < args.inference.using_ttda_step * ttda_queue_length:
+                if i  < args.inference.using_ttda_step :
                     logit_all = logit_text
                 else:
                     logit_all = (1-args.training.vis_weight) * logit_text + args.training.vis_weight * logit_vis
                 conf_vis, predicted = logit_all.max(dim=-1)  # 1x10
-                # if args.method == 'TDA':
-                #     output = learner.run_test_tda(image_feature_raw, output)
-                #     _, predicted = output.max(dim=-1)
-                #
-                #
-                # if args.method == 'ZS-NTTA' and args.inference.update_classifier == 'TDA':
-                #     output = learner.run_test_tda(image_feature_raw, output)
-                #     _, predicted = output.max(dim=-1)
 
                 valid_mask = target >= 0
                 conf_ood.extend(conf[(target == class_num) & valid_mask].detach().cpu().tolist())
@@ -430,7 +347,7 @@ flags.DEFINE_integer(name='patch_size', default=20, help='patch_size.')
 flags.DEFINE_integer(name='cache_len', default=10, help='patch_size.')
 flags.DEFINE_float(name='som_lr', default=0.05, help='som_lr.')
 flags.DEFINE_integer(name='som_iter', default=100, help='som_iter.')
-flags.DEFINE_float(name='vis_weight', default=0.1, help='vis_weight.')
+flags.DEFINE_float(name='vis_weight', default=0.2, help='vis_weight.')
 flags.DEFINE_integer(name='som_sigma', default=2, help='som_sigma.')
 
 

@@ -20,7 +20,7 @@ def get_default_configs():
     config.data = data = ml_collections.ConfigDict()
     data.path = "../csp_adaneg/data/images_largescale"
     # 1. -> 1./(1.+1.)=50%, 0.33 -> 0.33/(1.+0.33)=25%, 3. -> 3/(1.+3.)=75%  0.25 ood setting
-    data.OOD_ratio = 3.
+    data.OOD_ratio = 1.
     data.workers = 8
 
     # model
