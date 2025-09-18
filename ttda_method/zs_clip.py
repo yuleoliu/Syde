@@ -99,7 +99,7 @@ class ZeroShotCLIP:
         unseen_mask_ood = (ood_score > (best_threshold  + 0.5 * (1 - best_threshold)))
         unseen_mask_id = (ood_score < (best_threshold - 0.5 * best_threshold))
         unseen_mask = ood_score > (best_threshold)
-        return unseen_mask,unseen_mask_ood,unseen_mask_id,clip_output,ood_score
+        return unseen_mask,unseen_mask_ood,unseen_mask_id,clip_output
 
     @torch.no_grad()
     def get_output(self, image):
