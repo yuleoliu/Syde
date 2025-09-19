@@ -1,4 +1,4 @@
-# Code for Disentangling Signal from Noise: Symmetric Structure Modeling for Zero-shot Noisy Test-time Adaptation
+# Disentangling Signal from Noise: Symmetric Structure Modeling for Zero-shot Noisy Test-time Adaptation
 ## Installation
     conda create -n syde
     conda activate syde
