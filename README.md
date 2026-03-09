@@ -46,5 +46,5 @@ bash scripts/imagenet.sh
 Our implementation is greatly inspired by and built upon several excellent open-source works. We sincerely thank the authors for releasing their code:
 
 * **[AdaND](https://www.google.com/search?q=https://github.com/tmlr-group/ZS-NTTA)**: Our core codebase architecture and Zero-Shot NTTA pipeline are primarily based on their great work.
-* **[DeYO](https://github.com/Jhyun17/DeYO)**: For the insights and implementation details regarding entropy-based pseudo-label filtering margins.
-* **[OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM)**: Specifically, the AdaNeg method, which inspired the ID memory bank structure and entropy-based updating mechanism used in our framework.
+* **[DeYO](https://github.com/Jhyun17/DeYO)**
+* **[OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM)**
