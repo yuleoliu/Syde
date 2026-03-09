@@ -1,0 +1,19 @@
+# ignore the secret key
+.env
+
+# results*/
+ckpt/
+data_analysis/*/
+*pkl/
+wandb_local/
+# Byte-compiled / optimized / DLL files
+__pycache__/
+
+# vscode debug
+# .vscode/
+TDA/
+~/
+
+data_analysis/
+
+results/
