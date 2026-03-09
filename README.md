@@ -43,8 +43,8 @@ bash scripts/imagenet.sh
 
 ## Acknowledgements
 
-Our implementation is greatly inspired by and built upon several excellent open-source works. We sincerely thank the authors for releasing their code:
+Our implementation is built upon several excellent open-source works. We sincerely thank the authors for releasing their code:
 
-* **[AdaND](https://www.google.com/search?q=https://github.com/tmlr-group/ZS-NTTA)**: Our core codebase architecture and Zero-Shot NTTA pipeline are primarily based on their great work.
+* **[AdaND](https://github.com/tmlr-group/ZS-NTTA)**
 * **[DeYO](https://github.com/Jhyun17/DeYO)**
 * **[OpenOOD-VLM](https://github.com/YBZh/OpenOOD-VLM)**
