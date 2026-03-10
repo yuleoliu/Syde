@@ -24,7 +24,7 @@ pip install -r requirements.txt
 
 ## Data Preparation
 
-For evaluating Out-of-Distribution (OOD) performance, we utilize datasets commonly used in the literature. Please refer to the instructions provided by [Huang et al. 2021 (MOS)](https://github.com/deeplearning-wisc/large_scale_ood#out-of-distribution-dataset) for the download and preparation of the following datasets:
+For evaluating the ImageNet benchmark reported in **Table II**, Please refer to the instructions provided by [Huang et al. 2021 (MOS)](https://github.com/deeplearning-wisc/large_scale_ood#out-of-distribution-dataset) for the download and preparation of the following datasets:
 
 * ImageNet
 * iNaturalist
